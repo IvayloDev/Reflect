@@ -8,8 +8,9 @@ public class AnimationController : MonoBehaviour {
     private GameObject reflectedLight;
 
     private Vector3 curPos;
+    private Quaternion curRot;
 
-    private float offSet = 0.05f;
+    private float offSet;
 
     [SerializeField]
     private Canvas canvas;
@@ -21,6 +22,8 @@ public class AnimationController : MonoBehaviour {
 
     private GameObject[] mirrorsArray;
 
+    private GameObject[] ObstaclesArray;
+
     private Rigidbody2D rb;
 
     private TrailRenderer tr;
@@ -31,37 +34,96 @@ public class AnimationController : MonoBehaviour {
     private Animator BulbAnim;
 
     [SerializeField]
-    private Animator MirrorAnim;
+    private Animator ObstacleAnim;
 
     [SerializeField]
-    private Animator ObstacleAnim;
+    private Animator LevelTextAnim;
+
+    [SerializeField]
+    private Color mainColor, transitionColor;
+
+    public static int levelIndex;
+
+    private GameObject[] reflectLightsArray;
 
 
     IEnumerator StartAnimations() {
 
-        yield return new WaitForSeconds(0.2f);
+        levelFinished = true;
+
+        yield return new WaitForSeconds(0.1f);
+
+        //transform.localScale = new Vector3(500, 500);
+
+        LevelTextAnim.GetComponent<Text>().text = "" + levelIndex;
+        LevelTextAnim.SetTrigger("text");
+        Debug.Log(levelIndex);
+
+        yield return new WaitForSeconds(1.3f);
+
+        //Ball shrinking animation
+        tr.enabled = false;
+        GetComponent<CircleCollider2D>().enabled = false;
+        transform.position = BulbAnim.GetComponent<Transform>().position;
+        transform.localScale = new Vector3(500, 500);
+        GetComponent<SpriteRenderer>().enabled = true;
+        BallAnim.SetBool("ShrinkBall",true);
+
+        yield return new WaitForSeconds(0.5f);
+
+        Camera.main.backgroundColor = mainColor;
+
+        yield return new WaitForSeconds(1.2f);
 
         //Bulb Animation
         BulbAnim.GetComponent<Image>().enabled = true;
         BulbAnim.SetBool("Start", true);
 
-        yield return new WaitForSeconds(0.4f);
-
+        yield return new WaitForSeconds(0.25f);
+       
         //Obstacle Animation
-        ObstacleAnim.GetComponent<Image>().enabled = true;
-        ObstacleAnim.SetBool("Start", true);
+        foreach (GameObject go in ObstaclesArray) {
+            go.GetComponent<Image>().enabled = true;
+            go.GetComponent<Animator>().SetBool("Start",true);
+        }
 
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.25f);
 
         //Mirrors Animation
         foreach (GameObject go in mirrorsArray) {
             go.GetComponent<Image>().enabled = true;
-            go.GetComponent<Animator>().SetBool("Start", true);
+            go.GetComponent<Animator>().SetTrigger("Start");
         }
+
+       
+
+        BulbAnim.SetBool("Start", false);
+
+        yield return new WaitForSeconds(0.7f);
+        GetComponent<SpriteRenderer>().enabled = false;
+
+        levelFinished = false;
+        BallAnim.SetBool("ShrinkBall", false);
+
+        foreach (GameObject go in ObstaclesArray) {
+            go.GetComponent<Animator>().SetBool("Start",false);
+        }
+
 
     }
 
     IEnumerator EndAnimations() {
+
+        reflectLightsArray = GameObject.FindGameObjectsWithTag("Destroy");
+
+        tr.Clear();
+
+        //Destroy every reflect Light GO
+        for (int i = 0; i < reflectLightsArray.Length; i++) {
+
+            Destroy(reflectLightsArray[i]);
+
+        }
 
         yield return new WaitForSeconds(0.1f);
 
@@ -71,19 +133,34 @@ public class AnimationController : MonoBehaviour {
         yield return new WaitForSeconds(0.2f);
 
         //Obstacle Animation
-        ObstacleAnim.SetBool("End", true);
+        foreach (GameObject go in ObstaclesArray) {
+            go.GetComponent<Animator>().SetTrigger("End");
+        }
 
         yield return new WaitForSeconds(0.2f);
 
         //Mirrors Animation
         foreach (GameObject go in mirrorsArray) {
-            go.GetComponent<Animator>().SetBool("End", true);
+            go.GetComponent<Animator>().SetTrigger("End");
         }
 
+        //Display text and anim for it
+
+        yield return new WaitForSeconds(0.5f);
+
+        //retrieve text
+
+        yield return new WaitForSeconds(0.8f);
+
+        Camera.main.backgroundColor = transitionColor;
+
+        SceneManager.LoadScene(levelIndex);
 
     }
 
     IEnumerator NextLevel() {
+
+        BallAnim.SetBool("Default", false);
 
         //Set public bool to true can see from other scripts if the next level is currently being loaded
         levelFinished = true;
@@ -96,25 +173,39 @@ public class AnimationController : MonoBehaviour {
 
         yield return new WaitForSeconds(2f);
 
-        BallAnim.SetBool("ExpandBallBool", true);
-
         rb.isKinematic = true;
+
+        BallAnim.SetBool("ExpandBallBool",true);
 
         yield return new WaitForSeconds(1.5f);
 
         StartCoroutine(EndAnimations());
 
-        yield return new WaitForSeconds(3f);
+        //if loadpassedlevels.level is == levelIndex - 1 (means its the last one before the gray butts)
 
-        //Load next level
-        //SceneManager.LoadScene(Application.loadedLevel+ 1);
-        SceneManager.LoadScene(Application.loadedLevel);
+        //if (LevelSelectScript.currLevel == LoadPassedLevels.level - 1) {
+          //  LoadPassedLevels.level++;
+        //}
     }
 
     void Awake() {
 
-        //Tag is RightHit because all the mirrors are with this tag
-        mirrorsArray = GameObject.FindGameObjectsWithTag("RightHit");
+        levelIndex = PlayerPrefs.GetInt("levelIndex");
+
+        levelIndex = Application.loadedLevel + 1;
+
+        //WORKS ! LOAD LAST LEVEL !
+        //Application.LoadLevel(levelIndex);
+
+        mirrorsArray = GameObject.FindGameObjectsWithTag("Mirror");
+
+        ObstaclesArray = GameObject.FindGameObjectsWithTag("Enemy");
+
+    }
+
+    void OnDestroy() {
+
+        PlayerPrefs.SetInt("levelIndex", levelIndex);
 
     }
 
@@ -122,11 +213,14 @@ public class AnimationController : MonoBehaviour {
     void Start() {
 
         //Make UI invisible for the animations to be right
-        ObstacleAnim.GetComponent<Image>().enabled = false;
-        //MirrorAnim.GetComponent<Image>().enabled = false;
+
         BulbAnim.GetComponent<Image>().enabled = false;
 
-        foreach(GameObject go in mirrorsArray) {
+        foreach (GameObject go in ObstaclesArray) {
+            go.GetComponent<Image>().enabled = false;
+        }
+
+        foreach (GameObject go in mirrorsArray) {
             go.GetComponent<Image>().enabled = false;
         }
 
@@ -137,24 +231,22 @@ public class AnimationController : MonoBehaviour {
         rb = GetComponent<Rigidbody2D>();
         BallAnim = GetComponent<Animator>();
 
+        BallAnim.SetBool("Default", false);
+
         //Reset end point radius
         BulbCol.radius = 48;
 
         rb.isKinematic = false;
 
-
-        //Set animations
-
         StartCoroutine(StartAnimations());
-
-
-
 
     }
 
+
+
     void OnTriggerEnter2D(Collider2D collision) {
 
-        if (collision.tag == "RightHit"|| collision.tag == ("LeftHit")) { 
+        if (collision.tag == "Mirror") { 
         //Play MirrorHitAnimation
         collision.GetComponent<Animator>().SetTrigger("MirrorHitTrigger");
     }
@@ -168,36 +260,17 @@ public class AnimationController : MonoBehaviour {
 
     void OnCollisionEnter2D(Collision2D coll) {
 
+        if (coll.transform.tag == "Mirror") {
 
-        if (coll.transform.tag == "LeftHit") {
-            //Mathf.Clamp(curPos.y, coll.collider.bounds.min.y, coll.collider.bounds.max.y);
-
-            curPos = coll.transform.position;
+            curPos = transform.position;
 
             SpawnReflection();
-
-
-        } else if (coll.transform.tag == "RightHit") {
-
-            curPos = coll.transform.position;
-
-            SpawnReflection();
-
         }
     }
 
     void SpawnReflection() {
 
-        curPos.y = transform.position.y;
-
-        if (curPos.x <= 0) {
-            curPos.x += offSet;
-        } else {
-            curPos.x -= offSet;
-        }
-
         reflectedLight = Instantiate(Resources.Load("ReflectionLightOnMirror"), curPos, Quaternion.identity) as GameObject;
-        reflectedLight.transform.tag = "reflectedLight";
 
     }
 

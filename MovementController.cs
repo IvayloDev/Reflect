@@ -20,8 +20,12 @@ public class MovementController : MonoBehaviour {
     [SerializeField]
     private Animator dontCrossLineAnim;
 
+    [SerializeField]
+    private Animator whiteFlashAnim;
+
+
     //Not lagging with speed set to 40k
-    private float speed = 60000f;
+    private float speed = 100000f;
     private float distance = 10f;
 
     private bool addForceBool;
@@ -39,13 +43,19 @@ public class MovementController : MonoBehaviour {
 
     IEnumerator DestroyPlayer() {
 
-        //ScreenShake
         //Screen Flash
+        whiteFlashAnim.SetTrigger("WhiteFlash");
+
+        TopPanelManager.hintCount++;
         //Sound
+
+
+        GameObject particle = Instantiate(Resources.Load("Particles"), transform.position, Quaternion.identity) as GameObject;
+
 
         tr.time = 0.8f;
 
-        ballAnim.SetBool("DestroyBall",true);
+        ballAnim.SetTrigger("DestroyBall");
 
         rb.isKinematic = true;
 
@@ -73,13 +83,14 @@ public class MovementController : MonoBehaviour {
 
     }
 
+
     void Update() {
 
 
-        if (Input.GetMouseButtonDown(0)) {
+            if (Input.GetMouseButtonDown(0)) {
 
             //Populate array with every instantiated reflect light GO
-            reflectLightsArray = GameObject.FindGameObjectsWithTag("reflectedLight");
+            reflectLightsArray = GameObject.FindGameObjectsWithTag("Destroy");
 
             //get coordinates of clicked space
             ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -99,7 +110,7 @@ public class MovementController : MonoBehaviour {
                 DrawLine();
                 GetMousePosition();
 
-            } else if (hit.transform.CompareTag("Untagged")) {
+            } else if (hit.transform.CompareTag("Untagged") && !TopPanelManager.isPanelActive) {
 
                 //Play "Show Clickable Line" Animation
                 dontCrossLineAnim.SetTrigger("DontCross");
@@ -153,6 +164,9 @@ public class MovementController : MonoBehaviour {
 
             //get the mouse position
             mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+           
+
             //set the z co ordinate to 0 as we only want the x,y axes
             mousePos.z = 0;
             //set the start point and end point of the line renderer
@@ -168,6 +182,7 @@ public class MovementController : MonoBehaviour {
 
             mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
+
             mousePos.z = 0;
 
             line.SetPosition(1, mousePos);
@@ -175,6 +190,10 @@ public class MovementController : MonoBehaviour {
             secondPos = mousePos;
 
             //Set dotting texture to be tilling
+            if (Vector2.Distance(firstPos,secondPos) < 2f) {
+                line.material.mainTextureScale = new Vector2(10, 1);
+            }else
+            
             line.material.mainTextureScale = new Vector2((int)Vector2.Distance(firstPos, secondPos) * 10, 1);
 
 
@@ -218,11 +237,14 @@ public class MovementController : MonoBehaviour {
     //Reset position,trail and rigidbody2D when clicked
     void SetBallPosition() {
 
-
         if (Input.GetMouseButtonDown(0)) {
 
-            ballAnim.SetBool("DestroyBall", false);
+            TopPanelManager.isPanelActive = false;
 
+            ballAnim.SetBool("Default",true);
+
+            GetComponent<CircleCollider2D>().enabled = true;
+            
             //Activate Object
             GetComponent<SpriteRenderer>().enabled = true;
             tr.enabled = true;
