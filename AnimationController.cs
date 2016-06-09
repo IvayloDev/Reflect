@@ -42,10 +42,12 @@ public class AnimationController : MonoBehaviour {
     [SerializeField]
     private Color mainColor, transitionColor;
 
-    public static int levelIndex;
+    private int lvlIndex;
+
+    private bool endReachedFirst;
 
     private GameObject[] reflectLightsArray;
-
+    private bool boolDrag1, boolDrag2, boolDrag3, boolDrag4, boolDrag5, boolDrag6;
 
     IEnumerator StartAnimations() {
 
@@ -53,11 +55,12 @@ public class AnimationController : MonoBehaviour {
 
         yield return new WaitForSeconds(0.1f);
 
+        AudioManager.Main.PlayNewSound("NewLevel");
+        
         //transform.localScale = new Vector3(500, 500);
 
-        LevelTextAnim.GetComponent<Text>().text = "" + levelIndex;
+        LevelTextAnim.GetComponent<Text>().text = "" + LevelSelectScript.currLevel;
         LevelTextAnim.SetTrigger("text");
-        Debug.Log(levelIndex);
 
         yield return new WaitForSeconds(1.3f);
 
@@ -73,13 +76,13 @@ public class AnimationController : MonoBehaviour {
 
         Camera.main.backgroundColor = mainColor;
 
-        yield return new WaitForSeconds(1.2f);
+        yield return new WaitForSeconds(1f);
 
         //Bulb Animation
         BulbAnim.GetComponent<Image>().enabled = true;
         BulbAnim.SetBool("Start", true);
 
-        yield return new WaitForSeconds(0.25f);
+        yield return new WaitForSeconds(0.15f);
        
         //Obstacle Animation
         foreach (GameObject go in ObstaclesArray) {
@@ -87,7 +90,7 @@ public class AnimationController : MonoBehaviour {
             go.GetComponent<Animator>().SetBool("Start",true);
         }
 
-        yield return new WaitForSeconds(0.25f);
+        yield return new WaitForSeconds(0.15f);
 
         //Mirrors Animation
         foreach (GameObject go in mirrorsArray) {
@@ -146,20 +149,19 @@ public class AnimationController : MonoBehaviour {
 
         //Display text and anim for it
 
-        yield return new WaitForSeconds(0.5f);
-
-        //retrieve text
 
         yield return new WaitForSeconds(0.8f);
 
         Camera.main.backgroundColor = transitionColor;
 
-        SceneManager.LoadScene(levelIndex);
+      
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+
 
     }
 
     IEnumerator NextLevel() {
-
+        Debug.Log("LOL");
         BallAnim.SetBool("Default", false);
 
         //Set public bool to true can see from other scripts if the next level is currently being loaded
@@ -181,31 +183,15 @@ public class AnimationController : MonoBehaviour {
 
         StartCoroutine(EndAnimations());
 
-        //if loadpassedlevels.level is == levelIndex - 1 (means its the last one before the gray butts)
 
-        //if (LevelSelectScript.currLevel == LoadPassedLevels.level - 1) {
-          //  LoadPassedLevels.level++;
-        //}
     }
 
+
     void Awake() {
-
-        levelIndex = PlayerPrefs.GetInt("levelIndex");
-
-        levelIndex = Application.loadedLevel + 1;
-
-        //WORKS ! LOAD LAST LEVEL !
-        //Application.LoadLevel(levelIndex);
 
         mirrorsArray = GameObject.FindGameObjectsWithTag("Mirror");
 
         ObstaclesArray = GameObject.FindGameObjectsWithTag("Enemy");
-
-    }
-
-    void OnDestroy() {
-
-        PlayerPrefs.SetInt("levelIndex", levelIndex);
 
     }
 
@@ -240,6 +226,8 @@ public class AnimationController : MonoBehaviour {
 
         StartCoroutine(StartAnimations());
 
+        endReachedFirst = true;
+
     }
 
 
@@ -249,12 +237,16 @@ public class AnimationController : MonoBehaviour {
         if (collision.tag == "Mirror") { 
         //Play MirrorHitAnimation
         collision.GetComponent<Animator>().SetTrigger("MirrorHitTrigger");
-    }
 
-        if (collision.tag == "End") {
+        }
+
+        if (collision.tag == "End" && endReachedFirst) {
+
+            endReachedFirst = false;
 
             StartCoroutine(NextLevel());
-        
+            AudioManager.Main.PlayNewSound("reachedEnd");
+
         }
     }
 
@@ -265,7 +257,14 @@ public class AnimationController : MonoBehaviour {
             curPos = transform.position;
 
             SpawnReflection();
+            AudioManager.Main.PlayNewSound("MirrorHit");
+
         }
+    }
+
+    void Update() {
+
+
     }
 
     void SpawnReflection() {

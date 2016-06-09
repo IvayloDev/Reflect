@@ -23,6 +23,8 @@ public class MovementController : MonoBehaviour {
     [SerializeField]
     private Animator whiteFlashAnim;
 
+    [SerializeField]
+    private Animator levelSelectAnim, topPanelAnim;
 
     //Not lagging with speed set to 40k
     private float speed = 100000f;
@@ -39,16 +41,19 @@ public class MovementController : MonoBehaviour {
 
     private Animator ballAnim;
 
+    private AudioSource ballDragSound;
 
+    private bool boolDrag1, boolDrag2, boolDrag3, boolDrag4, boolDrag5, boolDrag6, boolDrag7, boolDrag8, boolDrag9;
 
     IEnumerator DestroyPlayer() {
+
+        AudioManager.Main.PlayNewSound("Destruction");
 
         //Screen Flash
         whiteFlashAnim.SetTrigger("WhiteFlash");
 
         TopPanelManager.hintCount++;
         //Sound
-
 
         GameObject particle = Instantiate(Resources.Load("Particles"), transform.position, Quaternion.identity) as GameObject;
 
@@ -70,7 +75,7 @@ public class MovementController : MonoBehaviour {
     }
 
     void Start() {
-
+        
         Application.targetFrameRate = 60;
 
         //Disable Object at start
@@ -80,14 +85,25 @@ public class MovementController : MonoBehaviour {
 
         rb = GetComponent<Rigidbody2D>();
         tr = GetComponent<TrailRenderer>();
+        ballDragSound = GetComponent<AudioSource>();
+
+        boolDrag1 = true;
+        boolDrag2 = true;
+        boolDrag3 = true;
+        boolDrag4 = true;
+        boolDrag5 = true;
+        boolDrag6 = true;
+        boolDrag7 = true;
+        boolDrag8 = true;
+        boolDrag9 = true;
+
 
     }
 
 
     void Update() {
 
-
-            if (Input.GetMouseButtonDown(0)) {
+        if (Input.GetMouseButtonDown(0)) {
 
             //Populate array with every instantiated reflect light GO
             reflectLightsArray = GameObject.FindGameObjectsWithTag("Destroy");
@@ -99,6 +115,7 @@ public class MovementController : MonoBehaviour {
 
         if (Physics.Raycast(ray, out hit, 100)) {
 
+
             //Check if finger position is in the clickable panel area else dont allow to fire the ball
             if (hit.transform.CompareTag("ClickableArea")) {
 
@@ -106,15 +123,30 @@ public class MovementController : MonoBehaviour {
                     return;
                 }
 
+
                 SetBallPosition();
                 DrawLine();
                 GetMousePosition();
 
+                levelSelectAnim.SetBool("LevelSelectIn", false);
+                levelSelectAnim.SetBool("LevelSelectOut", true);
+
+                topPanelAnim.SetBool("PanelOut", true);
+                topPanelAnim.SetBool("PanelIn", false);
+
+                TopPanelManager.menuClicked = 1;
+
+
+
             } else if (hit.transform.CompareTag("Untagged") && !TopPanelManager.isPanelActive) {
 
-                //Play "Show Clickable Line" Animation
-                dontCrossLineAnim.SetTrigger("DontCross");
-                ray.origin = new Vector3(0, 1000, 0);
+                    //Play "Show Clickable Line" Animation
+                    dontCrossLineAnim.SetTrigger("DontCross");
+                     ray.origin = new Vector3(0, 1000, 0);
+
+            }else if (hit.transform.CompareTag("TopPanelUI")) {
+
+                return;
 
             }
         }
@@ -130,12 +162,16 @@ public class MovementController : MonoBehaviour {
 
     }
 
+
+   
+
     void OnCollisionEnter2D(Collision2D collision) {
 
         if (collision.transform.CompareTag("Enemy")) {
 
             //Destroy Player
             StartCoroutine(DestroyPlayer());
+
 
         }
     }
@@ -191,10 +227,15 @@ public class MovementController : MonoBehaviour {
 
             //Set dotting texture to be tilling
             if (Vector2.Distance(firstPos,secondPos) < 2f) {
+
                 line.material.mainTextureScale = new Vector2(10, 1);
-            }else
+
+            } else
             
             line.material.mainTextureScale = new Vector2((int)Vector2.Distance(firstPos, secondPos) * 10, 1);
+
+            DragSounds();
+        
 
 
         }
@@ -206,6 +247,149 @@ public class MovementController : MonoBehaviour {
             Destroy(GameObject.FindGameObjectWithTag("LINE"));
 
         }
+    }
+
+    void DragSounds() {
+        
+        if (line.material.mainTextureScale.x == 10 && boolDrag1) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = false;
+            boolDrag2 = true;
+            boolDrag3 = true;
+            boolDrag4 = true;
+            boolDrag5 = true;
+            boolDrag6 = true;
+            boolDrag7 = true;
+            boolDrag8 = true;
+            boolDrag9 = true;
+        }
+
+        if (line.material.mainTextureScale.x == 20 && boolDrag2) {
+
+            ballDragSound.Play();
+            boolDrag1 = true;
+            boolDrag2 = false;
+            boolDrag3 = true;
+            boolDrag4 = true;
+            boolDrag5 = true;
+            boolDrag6 = true;
+            boolDrag7 = true;
+            boolDrag8 = true;
+            boolDrag9 = true;
+        }
+
+        if (line.material.mainTextureScale.x == 30 && boolDrag3) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = true;
+            boolDrag2 = true;
+            boolDrag3 = false;
+            boolDrag4 = true;
+            boolDrag5 = true;
+            boolDrag6 = true;
+            boolDrag7 = true;
+            boolDrag8 = true;
+            boolDrag9 = true;
+        }
+
+        if (line.material.mainTextureScale.x == 40 && boolDrag4) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = true;
+            boolDrag2 = true;
+            boolDrag3 = true;
+            boolDrag4 = false;
+            boolDrag5 = true;
+            boolDrag6 = true;
+            boolDrag7 = true;
+            boolDrag8 = true;
+            boolDrag9 = true;
+        }
+
+        if (line.material.mainTextureScale.x == 50 && boolDrag5) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = true;
+            boolDrag2 = true;
+            boolDrag3 = true;
+            boolDrag4 = true;
+            boolDrag5 = false;
+            boolDrag6 = true;
+            boolDrag7 = true;
+            boolDrag8 = true;
+            boolDrag9 = true;
+
+        }
+
+        if (line.material.mainTextureScale.x == 60 && boolDrag6) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = true;
+            boolDrag2 = true;
+            boolDrag3 = true;
+            boolDrag4 = true;
+            boolDrag5 = true;
+            boolDrag6 = false;
+            boolDrag7 = true;
+            boolDrag8 = true;
+            boolDrag9 = true;
+
+        }
+
+        if (line.material.mainTextureScale.x == 70 && boolDrag7) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = true;
+            boolDrag2 = true;
+            boolDrag3 = true;
+            boolDrag4 = true;
+            boolDrag5 = true;
+            boolDrag6 = true;
+            boolDrag7 = false;
+            boolDrag8 = true;
+            boolDrag9 = true;
+
+        }
+
+        if (line.material.mainTextureScale.x == 80 && boolDrag8) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = true;
+            boolDrag2 = true;
+            boolDrag3 = true;
+            boolDrag4 = true;
+            boolDrag5 = true;
+            boolDrag6 = true;
+            boolDrag7 = true;
+            boolDrag8 = false;
+            boolDrag9 = true;
+
+        }
+
+        if (line.material.mainTextureScale.x == 90 && boolDrag9) {
+
+            ballDragSound.Play();
+
+            boolDrag1 = true;
+            boolDrag2 = true;
+            boolDrag3 = true;
+            boolDrag4 = true;
+            boolDrag5 = true;
+            boolDrag6 = true;
+            boolDrag7 = true;
+            boolDrag8 = true;
+            boolDrag9 = false;
+
+        }
+
     }
 
     //Setting width and material of Line
@@ -223,7 +407,6 @@ public class MovementController : MonoBehaviour {
         //set the width
         line.SetWidth(0.08f, 0.08f);
 
-        //
         line.material.SetTextureOffset("_MainTex", new Vector2(-0.2f, 0));
 
         //render line to the world origin and not to the object's position

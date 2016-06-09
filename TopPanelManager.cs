@@ -14,8 +14,13 @@ public class TopPanelManager : MonoBehaviour {
     public static int hintCount = 0;
 
     public static bool isPanelActive;
-
+    
     private GameObject hint;
+
+    public static int menuClicked;
+
+    private Sound clickSound;
+
 
     public void OnPauseClick() {
 
@@ -24,19 +29,26 @@ public class TopPanelManager : MonoBehaviour {
         topPanelAnim.SetBool("PanelIn", true);
         topPanelAnim.SetBool("PanelOut", false);
 
-    }
+        AudioManager.Main.PlayNewSound("Click");
+
+    }   
 
     public void OnResumeClick() {
 
-        isPanelActive = false;
+        ReturnPanel();
+
+        AudioManager.Main.PlayNewSound("Click");
 
     }
 
     public void OnWatchAdClick() {
 
+        AudioManager.Main.PlayNewSound("Click");
+
         //if successful show hint GO
 
-        isPanelActive = false;
+        ReturnPanel();
+
 
         if (Advertisement.IsReady("rewardedVideo")) {
             var options = new ShowOptions { resultCallback = HandleShowResult };
@@ -66,23 +78,47 @@ public class TopPanelManager : MonoBehaviour {
 
     public void OnLevelSelectClick() {
 
-        levelSelectAnim.SetBool("LevelSelectOut", false);
-        levelSelectAnim.SetBool("LevelSelectIn", true);
+        if (menuClicked == 1) {
 
+            AudioManager.Main.PlayNewSound("Click");
+
+            levelSelectAnim.SetBool("LevelSelectOut", false);
+            levelSelectAnim.SetBool("LevelSelectIn", true);
+
+            menuClicked = 2;
+
+            return;
+
+        }
+
+        if (menuClicked == 2){
+            AudioManager.Main.PlayNewSound("Click");
+
+            levelSelectAnim.SetBool("LevelSelectOut", true);
+            levelSelectAnim.SetBool("LevelSelectIn", false);
+
+            menuClicked = 1;
+
+        }
 
     }
 
     void Start() {
+
+        menuClicked = 1;
 
         GameObject.FindGameObjectWithTag("Hint").GetComponent<Image>().enabled = false;
 
         topPanelAnim.SetBool("PanelOut", false);
         levelSelectAnim.SetBool("LevelSelectOut", false);
 
+        clickSound = AudioManager.Main.PlayNewSound("Click");
 
     }
 
     void ReturnPanel() {
+
+        menuClicked = 1;
 
         isPanelActive = false;
 
@@ -99,13 +135,7 @@ public class TopPanelManager : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
-
-        if (!isPanelActive) {
-
-            ReturnPanel();
-
-        }
-
+        Debug.Log(menuClicked);
         if (Input.GetKeyDown(KeyCode.Escape)) {
             Application.Quit();
         }

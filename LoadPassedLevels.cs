@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class LoadPassedLevels : MonoBehaviour {
 
@@ -16,48 +17,60 @@ public class LoadPassedLevels : MonoBehaviour {
     [SerializeField]
     private Color defaultColor;
 
-    public static int level;
+    private int currentlevel;
+    private int nextLevel;
+    public static int maxLevel = 1;
 
     void OnDestroy() {
 
-        PlayerPrefs.SetInt("level",level);
+        PlayerPrefs.SetInt("maxLvl",maxLevel+1);
 
     }
 
     void Awake() {
 
-        level = PlayerPrefs.GetInt("level", 1);
+        currentlevel = SceneManager.GetActiveScene().buildIndex;
 
-        //foreach (Text txt in texts) {
-        //    txt.color = grey;
-        //}
+        nextLevel = currentlevel + 1;
 
-        //foreach (Button butt in butts) {
-        //    butt.interactable = false;
-        // }
+        foreach (Text txt in texts) {
+            txt.color = grey;
+        }
 
-    }
+        foreach (Button butt in butts) {
+            butt.interactable = false;
+        }
 
-
-
-    void Start () {
-
-        //for (int i = 0; i <= level - 1; i++) {
-
-        //    texts[i].color = defaultColor;
-        //    butts[i].interactable = true;
-
-        //}
-
-
+        StartCoroutine(PopulateCompletedLevels());
 
     }
+
+    IEnumerator PopulateCompletedLevels() {
+
+        yield return new WaitForSeconds(0.1f);
+
+        for (int i = 0; i < maxLevel; i++) {
+
+            Debug.LogError(i);
+            texts[i].color = defaultColor;
+            butts[i].interactable = true;
+
+        }
+    }
+
 
     void Update () {
 
-        Debug.Log(level);
+            if (currentlevel >= maxLevel) {
 
-        Debug.LogWarning(AnimationController.levelIndex);
+              maxLevel = currentlevel;
 
+            }
+
+
+        Debug.Log("curr " + currentlevel);
+        Debug.Log("next " + nextLevel);
+        Debug.LogError(Application.loadedLevel);
+        Debug.LogError("MAX LEVEL " + maxLevel);
     }
 }
